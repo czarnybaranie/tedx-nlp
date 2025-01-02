@@ -26,8 +26,10 @@ The dataset includes the following variables:
 - **category**: Category of the talk
 - **sentiment**: Sentiment of the talk
 
-## Data Preparation
+## Dashboard
+To visualize the dataset, a dashboard was created using Shiny for Python package. Full version can be found in the [dashboard-shiny](/dashboard-shiny) folder. An online demo version was published [here](https://shinylive.io/py/app/#gist=cf7291098ed62e653d1f461400bd2721), using sampled 1% data of the original dataset due to file size limitations. 
 
+## Data Preparation
 The dataset was prepared through the following steps:
 
 1. Dataset was scraped using a script by [@Benjamin Loison](https://github.com/Benjamin-LOISON).
@@ -44,6 +46,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - [@Benjamin Loison](https://github.com/Benjamin-LOISON) for the initial scraping script.
-- [Hugging Face](https://huggingface.co/) for providing the models used for translation and analysis.
-- [OpenAI](https://openai.com/) for the GPT4o-mini model used in sentiment analysis.
-- [TEDx dataset](https://github.com/mauropelucchi/tedx_dataset) for providing the basis for correct labeling.
+- [TEDx dataset](https://github.com/mauropelucchi/tedx_dataset) and its creator for providing the basis for correct labeling.
