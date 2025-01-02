@@ -1,15 +1,16 @@
 import seaborn as sns
+import asyncio
 
 # Import data from shared.py
-from shared import app_dir, df, show_category_notification, show_sentiment_notification
+from shared import app_dir, df, geojson_data, show_category_notification, show_map_notification, show_map_description, show_sentiment_notification
 from shiny import reactive
 from shiny.express import input, render, ui
 from shinywidgets import render_widget, render_plotly
-from shiny.types import ImgData
-from pathlib import Path
 # Import plots
 # from basic_plots import line_plot_videos_views, treemap_languages_plot
 # from ShinyForPython.category_plots import sunburst, sunburst_df, category_popularity_over_time
+import ipyleaflet as L
+from ipywidgets import HTML
 
 from plots import line_plot_videos_views, treemap_languages_plot, sunburst, sunburst_df, category_popularity_over_time, sentiment_analysis_plot, log_scale_boxplot_by_categories, views_vs_title_length_plot
 from plots import get_parent_categories
@@ -25,6 +26,7 @@ ui.page_opts(title="TEDx Video Titles Analysis")
 
 sort_status = reactive.Value(False)
 current_tab = reactive.Value("")
+progress = reactive.Value(0)
 
 ui.nav_spacer()  # Push the navbar items to the right
 
@@ -243,8 +245,127 @@ with ui.nav_panel("Wordcloud"):
 
 with ui.nav_panel("Map of events"):
     with ui.navset_card_underline(title="Map of events"):
-        with ui.nav_panel("Plot"):
-            "Will be in the future"
+        with ui.nav_panel("Map"):
+
+            ui.input_action_button("load_map", "Load Map"),
+
+            # @render.text
+            # def loading_progress():
+            #     current = progress.get() or 0
+            #     total = len(cities)
+            #     return f"Loaded {current} of {total} markers"
+
+            @reactive.effect
+            @reactive.event(input.load_map)
+            def please_wait():
+                return show_map_notification()
+
+            @reactive.effect
+            @reactive.event(input.load_map)
+            def map_note():
+                return show_map_description()
+            
+            @render_widget
+            @reactive.event(input.load_map)
+            def map():
+                m = L.Map(center=(0, 0), zoom=4, scroll_wheel_zoom=True, prefer_canvas=True)
+                
+                # markers = [
+                #     L.Marker(
+                #         location=(city.latitude, city.longitude),
+                #         draggable=False,
+                #         popup=L.Popup(child=HTML(value=f"<b>{city.event_organizer}</b>"))
+                #     ) for _, city in cities.iterrows()
+                # ]
+
+                # marker_cluster = L.MarkerCluster(markers=markers)
+                markers = [
+                    L.Marker(
+                        location=(feature['geometry']['coordinates'][1], feature['geometry']['coordinates'][0]),
+                        draggable=False,
+                        popup=HTML(value=feature['properties']['popup'])
+                    ) for feature in geojson_data['features']
+                ]
+                
+                marker_cluster = L.MarkerCluster(markers=markers)
+                m.add_layer(marker_cluster)
+                # m.add_layer(marker_cluster)
+                
+                return m
+            # async def map():
+            #     with ui.Progress(min=0, max=len(cities)) as p:
+            #         p.set(message="Loading map...", detail="Adding markers")
+
+            #         # Initialize the map
+            #         m = L.Map(center=(0, 0), zoom=4, scroll_wheel_zoom=True, prefer_canvas=True)
+
+            #         # Initialize MarkerCluster for better performance
+            #         marker_cluster = L.MarkerCluster()
+            #         m.add_layer(marker_cluster)
+
+            #         # Loop through cities and add markers
+            #         for i, (_, city) in enumerate(cities.iterrows(), start=1):
+            #             marker = L.Marker(
+            #                 location=(city.latitude, city.longitude),
+            #                 draggable=False,
+            #                 popup=L.Popup(child=HTML(value=f"<b>{city.event_organizer}</b>"))
+            #             )
+            #             marker_cluster.add_child(marker)
+            #             # Update progress
+            #             progress.set(i)
+            #             p.set(i, detail=f"Added {i} of {len(cities)} markers.")
+
+            #             # Yield control to allow UI to update
+            #             await asyncio.sleep(0.001)  # Minimal sleep to enable UI refresh
+
+            #     return m
+            # async def map():
+            #     with ui.Progress(min=0, max=len(cities)) as p:
+            #         p.set(message="Loading map...", detail="Adding markers")
+
+            #         # Create the map
+            #         m = L.Map(center=(0, 0), zoom=4, scroll_wheel_zoom=True, prefer_canvas=True)
+
+            #         markers = []
+            #         for i, (_, city) in enumerate(cities.iterrows()):
+            #             marker = L.Marker(
+            #                 location=(city.latitude, city.longitude),
+            #                 draggable=False,
+            #                 popup=L.Popup(child=HTML(value=f"<b>{city.event_organizer}</b>"))
+            #             )
+            #             markers.append(marker)
+
+            #             # Update progress and allow UI to refresh
+            #             p.set(i + 1)
+            #             await asyncio.sleep(0)
+
+            #         # Cluster markers
+            #         marker_cluster = L.MarkerCluster(markers=markers)
+            #         m.add_layer(marker_cluster)
+
+            #         return m
+            # def map():
+            #     # Enable canvas rendering
+            #     m = L.Map(center=(0, 0), zoom=4, scroll_wheel_zoom=True, prefer_canvas=True)
+                
+            #     # Instead of L.Marker, use L.CircleMarker
+            #     for _, city in cities.iterrows():
+            #         circle_marker = L.CircleMarker(
+            #             location=(city.latitude, city.longitude),
+            #             radius=5,                # circle size
+            #             color="blue",            # outline color
+            #             fill_color="blue",       # fill color
+            #             fill_opacity=0.6,        # fill opacity
+            #             stroke=True              # whether to draw the stroke/outline
+            #         )
+            #         # Optionally attach a popup
+            #         circle_marker.popup = L.Popup(
+            #             child=HTML(value=f"<b>{city.event_organizer}</b>")
+            #         )
+            #         m.add_layer(circle_marker)
+                
+            #     return m
+                
             # map of events
             # @render_plotly
             # def map_plot():
