@@ -1,4 +1,4 @@
-# TEDx Dataset Analysis
+# TEDx Videos Dataset and NLP Analysis
 
 This project involves the analysis of a comprehensive dataset containing data on 226,752 TEDx talks posted on YouTube from 2009 to 2024. The data was scraped from the official [@TEDxTalks](https://www.youtube.com/user/TEDxTalks) YouTube channel and processed for analysis.
 
