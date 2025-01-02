@@ -1,26 +1,30 @@
-import seaborn as sns
-import asyncio
-
 # Import data from shared.py
-from shared import app_dir, df, geojson_data, show_category_notification, show_map_notification, show_map_description, show_sentiment_notification
+from shared import (
+    app_dir,
+    df,
+    geojson_data,
+    show_category_notification,
+    show_map_notification,
+    show_map_description,
+    show_sentiment_notification,
+)
 from shiny import reactive
 from shiny.express import input, render, ui
 from shinywidgets import render_widget, render_plotly
-# Import plots
-# from basic_plots import line_plot_videos_views, treemap_languages_plot
-# from ShinyForPython.category_plots import sunburst, sunburst_df, category_popularity_over_time
 import ipyleaflet as L
-from ipywidgets import HTML
+import ipywidgets as widgets
 
-from plots import line_plot_videos_views, treemap_languages_plot, sunburst, sunburst_df, category_popularity_over_time, sentiment_analysis_plot, log_scale_boxplot_by_categories, views_vs_title_length_plot
+from plots import (
+    line_plot_videos_views,
+    treemap_languages_plot,
+    sunburst,
+    sunburst_df,
+    category_popularity_over_time,
+    sentiment_analysis_plot,
+    log_scale_boxplot_by_categories,
+    views_vs_title_length_plot,
+)
 from plots import get_parent_categories
-import pandas as pd
-import plotly.express as px
-
-import matplotlib.pyplot as plt
-
-import numpy as np
-
 
 ui.page_opts(title="TEDx Video Titles Analysis")
 
@@ -34,12 +38,14 @@ input_footer = ui.input_select(
     "var", "Select variable", choices=["language", "category"]
 )
 
+
 def create_category_selection(input_id):
     return ui.input_select(
         input_id,
         "Select a category below:",
-        ['All categories'] + list(df['category'].unique())
+        ["All categories"] + list(df["category"].unique()),
     )
+
 
 category_selection1 = create_category_selection("category")
 category_selection2 = create_category_selection("category2")
@@ -52,18 +58,26 @@ with ui.nav_panel("Description"):
     with ui.navset_card_underline(title="Description of the dataset"):
         with ui.nav_panel("General information"):
             with ui.card():
+
                 @render.ui()
                 def title():
-                    return ui.HTML("<span style='font-size:20px; font-weight:bold;'>TEDx dataset</span>")
+                    return ui.HTML(
+                        "<span style='font-size:20px; font-weight:bold;'>TEDx dataset</span>"
+                    )
+
                 @render.ui()
                 def show_description():
-                    return ui.HTML("""<p>This dataset contains data on ~226k TEDx talks posted on YouTube from 2009 to 2024. The data was scraped from the official <a href="https://www.youtube.com/user/TEDxTalks">@TEDxTalks</a> youtube channel. 
+                    return ui.HTML(
+                        """<p>This dataset contains data on ~226k TEDx talks posted on YouTube from 2009 to 2024. The data was scraped from the official <a href="https://www.youtube.com/user/TEDxTalks">@TEDxTalks</a> youtube channel. 
                     The data was processed and cleaned to provide a comprehensive dataset for analysis. 
-                    Additionally, a categorisation of the videos and sentiment analysis was performed. To achieve that, the non-English talks were translated.</p>""")
+                    Additionally, a categorisation of the videos and sentiment analysis was performed. To achieve that, the non-English talks were translated.</p>"""
+                    )
+
                 # variables description
                 @render.ui()
                 def variables_description():
-                    return ui.HTML("""<span style='font-size:20px; font-weight:bold;'>Variables description</span>
+                    return ui.HTML(
+                        """<span style='font-size:20px; font-weight:bold;'>Variables description</span>
                                    <ul>
                                    <li><b>original_string:</b> Original string from the scraped data</li>
                                    <li><b>full_title:</b> Full title of the talk (consising of the talk title, speaker and the event name</li>
@@ -80,13 +94,19 @@ with ui.nav_panel("Description"):
                                    <li><b>translated_title:</b> Translated title of the talk</li>
                                    <li><b>category:</b> Category of the talk</li>
                                    <li><b>sentiment:</b> Sentiment of the talk</li>
-                                   </ul>""")
+                                   </ul>"""
+                    )
+
                 @render.ui()
                 def data_preparation_title():
-                    return ui.HTML("<span style='font-size:20px; font-weight:bold;'>Data preparation</span>")
+                    return ui.HTML(
+                        "<span style='font-size:20px; font-weight:bold;'>Data preparation</span>"
+                    )
+
                 @render.ui()
                 def data_preparation():
-                    return ui.HTML("""<p>The dataset was prepared in following steps:</p>
+                    return ui.HTML(
+                        """<p>The dataset was prepared in following steps:</p>
                                       <ol>
                                         <li>Dataset was scraped using a script by <a href="https://github.com/Benjamin-LOISON">@Benjamin Loison</a></li>
                                         <li>Extensive data processing was performed, to extract the desired columns from scraped string of text.</li>
@@ -94,11 +114,13 @@ with ui.nav_panel("Description"):
                                         <li>To perform further analysis with satisfying results, fine-tuned models had to be used. Therefore an existing <a href="https://github.com/mauropelucchi/tedx_dataset">TEDx dataset</a> with ~7k records scraped from official TEDx website was used as a basis for correct labelling. GPT4o-mini via OpenAI API was used to select the most relevant one for each TEDx Talk and to provide a most probable sentiment based on the title with a rigid interpretation. Number of categories was then further manually reduced to 32.</li>
                                         <li>Categories were created using a <a href="https://huggingface.co/facebook/bart-large-mnli">version of Bart model</a>, further fine-tuned using the small ChatGPT-annotated dataset achieving 0.81 AUC score on multi-label (32 labels) classification task.</li>
                                         <li>Sentiment analysis was performed by further fine-tuning a <a href="https://huggingface.co/finiteautomata/bertweet-base-sentiment-analysis">BERT-based model</a> achieving 0.99 accuracy.</li>
-                                        </ol>""")
-                
+                                        </ol>"""
+                    )
+
         with ui.nav_panel("Data preview"):
             with ui.card():
                 ui.input_action_button("row_button", "Show first 5 rows")
+
                 @render.data_frame
                 @reactive.event(input.row_button)
                 def show_first_rows():
@@ -108,6 +130,7 @@ with ui.nav_panel("Description"):
 with ui.nav_panel("Basic plots"):
     with ui.navset_card_underline(title="", footer=category_selection1):
         with ui.nav_panel("Videos and views over time"):
+
             @reactive.effect
             def show_notification():
                 if current_tab.get() == "category":
@@ -120,37 +143,31 @@ with ui.nav_panel("Basic plots"):
                 selected_var = input.category()
                 current_tab.set("category")
                 return line_plot_videos_views(df, selected_var)
+
         with ui.nav_panel("Languages overview"):
+
             @render_plotly
             def treemap_widget():
                 selected_var = input.category()
                 return treemap_languages_plot(df, selected_var)
-                
+
             url = "https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes"
             ui.HTML(f' <a href="{url}" target="_blank">Check language codes here</a>')
-            
+
 
 with ui.nav_panel("Categories"):
     with ui.navset_card_underline(title="Overview of data about categories"):
         with ui.nav_panel("Categorisation of topics"):
-
-            # @reactive.effect
-            # def track_tab_change():
-            #     if current_tab.get() == "category":
-            #         show_important_message()
-
-            # # Example of how to update the current_tab state when the user navigates to a tab
-            # def on_tab_change(new_tab):
-            #     current_tab.set(new_tab)
-
             with ui.layout_columns():
                 with ui.card():
-                    @render_plotly  
+
+                    @render_plotly
                     def sunburst_widget():
                         return sunburst(df)
+
                 with ui.card():
 
-                    ui.input_action_button("action_button", "Sort / Unsort")  
+                    ui.input_action_button("action_button", "Sort / Unsort")
 
                     @render.text()
                     @reactive.event(input.action_button)
@@ -161,66 +178,48 @@ with ui.nav_panel("Categories"):
                         else:
                             sort_status.set(True)
                             return
-                    
+
                     @render.ui
                     def table_title():
-                        return ui.HTML("<span style='font-size:20px; font-weight:bold;'>Table of categories with percentages of category III</span>")                        
-                    
+                        return ui.HTML(
+                            "<span style='font-size:20px; font-weight:bold;'>Table of categories with percentages of category III</span>"
+                        )
+
                     @render.data_frame
                     def data():
                         table_df = sunburst_df(df)
-                        table_df.columns = ['Category I', 'Category II', 'Category III', 'count', 'percentage']
+                        table_df.columns = [
+                            "Category I",
+                            "Category II",
+                            "Category III",
+                            "count",
+                            "percentage",
+                        ]
                         if sort_status.get():
-                            table_df = table_df.sort_values(by='percentage', ascending=False)
+                            table_df = table_df.sort_values(
+                                by="percentage", ascending=False
+                            )
                         return table_df
 
-            # @render.plot
-
-
-        # with ui.nav_panel("Table"):
-
-        #     ui.input_action_button("action_button", "Sort / Unsort", width='10%')  
-
-        #     @render.text()
-        #     @reactive.event(input.action_button)
-        #     def sort():
-        #         if sort_status.get():
-        #             sort_status.set(False)
-        #             return
-        #         else:
-        #             sort_status.set(True)
-        #             return
-
-            # @render.data_frame
-            # def data():
-            #     table_df = sunburst_df(df)
-            #     if sort_status.get():
-            #         table_df = table_df.sort_values(by='percentage', ascending=False)
-            #     return table_df
-
-
         with ui.nav_panel("Category popularity over time"):
-            ui.input_select(  
-                "category_inside",  
+            ui.input_select(
+                "category_inside",
                 "Highlight a category:",
-                ['-'] + list(df['category'].unique())  
+                ["-"] + list(df["category"].unique()),
             ),
 
             @render_plotly
             def category_popularity_widget():
                 selected_category = input.category_inside()
-                return category_popularity_over_time(df,selected_category)
+                return category_popularity_over_time(df, selected_category)
+
 
 with ui.nav_panel("Wordcloud"):
-    with ui.navset_card_underline(title="Wordcloud from all translated titles", footer=category_selection2):
+    with ui.navset_card_underline(
+        title="Wordcloud from all translated titles", footer=category_selection2
+    ):
         with ui.nav_panel("Plot"):
-            # wordcloud based on translated titles
-            # @render.image
-            # def wordcloud():
-            #     selected_var = input.category2()
-            #     img: ImgData = {"src": str(app_dir / f"wordclouds/{selected_var}_wordcloud.png"), "alt": "Wordcloud"}
-            #     centered_img = f'<div style="display: flex; justify-content: center;"><img src="{img["src"]}" alt="{img["alt"]}"></div>'
-            #     return centered_img
+
             @render.ui
             def wordcloud_title():
                 selected_var = input.category2()
@@ -228,32 +227,32 @@ with ui.nav_panel("Wordcloud"):
                     text = "Wordcloud for all categories*"
                 else:
                     text = f"Wordcloud for {selected_var}*"
-                return ui.HTML(f"<span style='font-size:20px; font-weight:bold; text-align:center'>{text}</span>")             
-            
+                return ui.HTML(
+                    f"<span style='font-size:20px; font-weight:bold; text-align:center'>{text}</span>"
+                )
+
             @render.image
             def wordcloud():
                 selected_var = input.category2()
                 img_src = str(app_dir / f"wordclouds/{selected_var}_wordcloud.png")
-                return {"src": img_src, "alt": "Wordcloud", "style": "display: block; margin-left: auto; margin-right: auto;"}
-            
-            # @render.ui
-            # def wordcloud_description():
-            #     return ui.HTML("Most common words in translated titles. The size of the word is proportional to its frequency in the dataset.")
+                return {
+                    "src": img_src,
+                    "alt": "Wordcloud",
+                    "style": "display: block; margin-left: auto; margin-right: auto;",
+                }
+
             @render.ui
             def wordcloud_footer():
-                return ui.HTML(f"<span style='margin-top:100px'>*Most common words in translated titles. The size of the word is proportional to its frequency in the dataset.</span>")
+                return ui.HTML(
+                    f"<span style='margin-top:100px'>*Most common words in translated titles. The size of the word is proportional to its frequency in the dataset.</span>"
+                )
+
 
 with ui.nav_panel("Map of events"):
     with ui.navset_card_underline(title="Map of events"):
         with ui.nav_panel("Map"):
 
             ui.input_action_button("load_map", "Load Map"),
-
-            # @render.text
-            # def loading_progress():
-            #     current = progress.get() or 0
-            #     total = len(cities)
-            #     return f"Loaded {current} of {total} markers"
 
             @reactive.effect
             @reactive.event(input.load_map)
@@ -264,131 +263,51 @@ with ui.nav_panel("Map of events"):
             @reactive.event(input.load_map)
             def map_note():
                 return show_map_description()
-            
+
             @render_widget
             @reactive.event(input.load_map)
             def map():
-                m = L.Map(center=(0, 0), zoom=4, scroll_wheel_zoom=True, prefer_canvas=True)
-                
-                # markers = [
-                #     L.Marker(
-                #         location=(city.latitude, city.longitude),
-                #         draggable=False,
-                #         popup=L.Popup(child=HTML(value=f"<b>{city.event_organizer}</b>"))
-                #     ) for _, city in cities.iterrows()
-                # ]
+                m = L.Map(
+                    center=(0, 0), zoom=4, scroll_wheel_zoom=True, prefer_canvas=True
+                )
 
-                # marker_cluster = L.MarkerCluster(markers=markers)
                 markers = [
                     L.Marker(
-                        location=(feature['geometry']['coordinates'][1], feature['geometry']['coordinates'][0]),
+                        location=(
+                            feature["geometry"]["coordinates"][1],
+                            feature["geometry"]["coordinates"][0],
+                        ),
                         draggable=False,
-                        popup=HTML(value=feature['properties']['popup'])
-                    ) for feature in geojson_data['features']
+                        popup=L.Popup(child=widgets.Output(value=feature['properties']['popup'])),
+                    )
+                    for feature in geojson_data["features"]
                 ]
-                
+
                 marker_cluster = L.MarkerCluster(markers=markers)
                 m.add_layer(marker_cluster)
-                # m.add_layer(marker_cluster)
-                
+
                 return m
-            # async def map():
-            #     with ui.Progress(min=0, max=len(cities)) as p:
-            #         p.set(message="Loading map...", detail="Adding markers")
 
-            #         # Initialize the map
-            #         m = L.Map(center=(0, 0), zoom=4, scroll_wheel_zoom=True, prefer_canvas=True)
 
-            #         # Initialize MarkerCluster for better performance
-            #         marker_cluster = L.MarkerCluster()
-            #         m.add_layer(marker_cluster)
-
-            #         # Loop through cities and add markers
-            #         for i, (_, city) in enumerate(cities.iterrows(), start=1):
-            #             marker = L.Marker(
-            #                 location=(city.latitude, city.longitude),
-            #                 draggable=False,
-            #                 popup=L.Popup(child=HTML(value=f"<b>{city.event_organizer}</b>"))
-            #             )
-            #             marker_cluster.add_child(marker)
-            #             # Update progress
-            #             progress.set(i)
-            #             p.set(i, detail=f"Added {i} of {len(cities)} markers.")
-
-            #             # Yield control to allow UI to update
-            #             await asyncio.sleep(0.001)  # Minimal sleep to enable UI refresh
-
-            #     return m
-            # async def map():
-            #     with ui.Progress(min=0, max=len(cities)) as p:
-            #         p.set(message="Loading map...", detail="Adding markers")
-
-            #         # Create the map
-            #         m = L.Map(center=(0, 0), zoom=4, scroll_wheel_zoom=True, prefer_canvas=True)
-
-            #         markers = []
-            #         for i, (_, city) in enumerate(cities.iterrows()):
-            #             marker = L.Marker(
-            #                 location=(city.latitude, city.longitude),
-            #                 draggable=False,
-            #                 popup=L.Popup(child=HTML(value=f"<b>{city.event_organizer}</b>"))
-            #             )
-            #             markers.append(marker)
-
-            #             # Update progress and allow UI to refresh
-            #             p.set(i + 1)
-            #             await asyncio.sleep(0)
-
-            #         # Cluster markers
-            #         marker_cluster = L.MarkerCluster(markers=markers)
-            #         m.add_layer(marker_cluster)
-
-            #         return m
-            # def map():
-            #     # Enable canvas rendering
-            #     m = L.Map(center=(0, 0), zoom=4, scroll_wheel_zoom=True, prefer_canvas=True)
-                
-            #     # Instead of L.Marker, use L.CircleMarker
-            #     for _, city in cities.iterrows():
-            #         circle_marker = L.CircleMarker(
-            #             location=(city.latitude, city.longitude),
-            #             radius=5,                # circle size
-            #             color="blue",            # outline color
-            #             fill_color="blue",       # fill color
-            #             fill_opacity=0.6,        # fill opacity
-            #             stroke=True              # whether to draw the stroke/outline
-            #         )
-            #         # Optionally attach a popup
-            #         circle_marker.popup = L.Popup(
-            #             child=HTML(value=f"<b>{city.event_organizer}</b>")
-            #         )
-            #         m.add_layer(circle_marker)
-                
-            #     return m
-                
-            # map of events
-            # @render_plotly
-            # def map_plot():
-            #     fig = px.scatter_geo(df, lat='latitude', lon='longitude', color='category', hover_name='event', size='views', projection='natural earth')
-            #     fig.update_geos(showcountries=True, countrycolor="Black", showland=True, landcolor="LightGrey", showocean=True, oceancolor="LightBlue")
-            #     fig.update_layout(title='Map of events', title_x=0.5)
-            #     return fig
-            
 with ui.nav_panel("Sentiment analysis"):
-    with ui.navset_card_underline(title="Sentiment over time", footer=category_selection3):
+    with ui.navset_card_underline(
+        title="Sentiment over time", footer=category_selection3
+    ):
         with ui.nav_panel("Plot"):
+
             @reactive.effect
             def show_sentiment():
                 if current_tab.get() == "sentiment":
                     return show_sentiment_notification()
                 else:
                     return
-            
+
             @render_plotly
             def sentiment_analysis_widget():
                 current_tab.set("sentiment")
                 selected_var = input.category3()
                 return sentiment_analysis_plot(df, selected_var)
+
 
 with ui.nav_panel("Views correlation"):
     with ui.navset_card_underline(title="Views correlation with other factors"):
@@ -396,30 +315,41 @@ with ui.nav_panel("Views correlation"):
             with ui.card():
                 with ui.layout_columns():
                     with ui.card():
-                        ui.input_selectize(  
-                            "selectize_categories",  
-                            "Select categories to compare:",  
+                        ui.input_selectize(
+                            "selectize_categories",
+                            "Select categories to compare:",
                             # {category: category for category in df['category'].unique() if category is not np.nan},
                             get_parent_categories(),
-                            # {  
-                            #     "a": "A",  
-                            #     "b": "B",  
-                            #     "c": "C",  
-                            # }, 
                             multiple=True,
-                        )  
-                        ui.input_checkbox("select_all_checkbox", "Select All", False)  
+                        )
+                        ui.input_checkbox("select_all_checkbox", "Select All", False)
                     with ui.card():
-                        ui.input_selectize(  
-                            "selectize_lang",  
-                            "Select a language:",  
-                            {'All Languages': 'All Languages', **{lang: lang for lang in df['language'].unique() if lang != 'unknown'}}
-                            )
+                        ui.input_selectize(
+                            "selectize_lang",
+                            "Select a language:",
+                            {
+                                "All Languages": "All Languages",
+                                **{
+                                    lang: lang
+                                    for lang in df["language"].unique()
+                                    if lang != "unknown"
+                                },
+                            },
+                        )
                     with ui.card():
-                        ui.input_slider("slider", "Select a date range", min=2009, max=2024, value=[2009, 2024], step=1, sep="")
+                        ui.input_slider(
+                            "slider",
+                            "Select a date range",
+                            min=2009,
+                            max=2024,
+                            value=[2009, 2024],
+                            step=1,
+                            sep="",
+                        )
 
             with ui.layout_column_wrap(width=1 / 2):
                 with ui.card():
+
                     @render_plotly
                     def boxplot_by_grandparent_widget():
                         if input.select_all_checkbox():
@@ -428,8 +358,12 @@ with ui.nav_panel("Views correlation"):
                             selected_categories = input.selectize_categories()
                         selected_lang = input.selectize_lang()
                         years = input.slider()
-                        return log_scale_boxplot_by_categories(df, years[0], years[1], selected_categories, selected_lang)
+                        return log_scale_boxplot_by_categories(
+                            df, years[0], years[1], selected_categories, selected_lang
+                        )
+
                 with ui.card():
+
                     @render_plotly
                     def views_vs_title_length_widget():
                         if input.select_all_checkbox():
@@ -438,4 +372,6 @@ with ui.nav_panel("Views correlation"):
                             selected_categories = input.selectize_categories()
                         selected_lang = input.selectize_lang()
                         years = input.slider()
-                        return views_vs_title_length_plot(df, years[0], years[1], selected_categories, selected_lang)
+                        return views_vs_title_length_plot(
+                            df, years[0], years[1], selected_categories, selected_lang
+                        )
